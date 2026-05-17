@@ -1,0 +1,13 @@
+
+Name:      Mona Lisa
+Year:      1505
+Width:     0.53
+Height:    0.77
+Style:     Renaissance
+* * *
+Name:      Black Square
+Year:      1918
+Width:     0.32
+Height:    0.32
+Style:     Suprematism
+* * *
