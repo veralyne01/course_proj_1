@@ -65,8 +65,8 @@ int main() {
                 char c;
                 scanf_s(" %c", &c, 1u);
                 if (c == 'y') {
-                    fclose(f); 
-                    errno_t err1 = fopen_s(&f, filename, "wb"); 
+                    fclose(f);
+                    errno_t err1 = fopen_s(&f, filename, "wb");
                     if (err1 == 0 && f) printf("File was successfully created!\n");
                     else printf("File opening error!\n");
                     break;
@@ -229,7 +229,7 @@ void addPicture(FILE** f) {
     printf("Author: "); scanf_s(" %99[^\n]", pd.artist, (unsigned)_countof(pd.artist));
     while (!valid) {
         printf("Year: ");
-        if (!scanf_s("%d", &pd.year)) 
+        if (!scanf_s("%d", &pd.year))
         {
             printf("\nError!\n");
             int c;
@@ -239,7 +239,7 @@ void addPicture(FILE** f) {
     }
     valid = false;
     while (!valid) {
-        printf("Width (m): "); 
+        printf("Width (m): ");
         if (!scanf_s("%f", &pd.width))
         {
             printf("\nError!\n");
@@ -354,7 +354,7 @@ int searchByName(FILE* f) {
     printf("\nEnter painting name: ");
     scanf_s(" %99[^\n]", target, (unsigned)_countof(target));
     do {
-        fseek(f, l*sizeof(Picture), SEEK_SET);
+        fseek(f, l * sizeof(Picture), SEEK_SET);
         t = fread(&p, sizeof(Picture), 1, f);
         l++;
     } while (strcmp(p.name, target) != 0 && t != 0);
@@ -367,7 +367,7 @@ void deletePic(FILE** f) {
     int n = countPos(*f);
     if (pos == -1) printf("\nError!\n");
     else {
-        while (pos < n - 1) 
+        while (pos < n - 1)
         {
             swap(f, pos, pos + 1);
             pos++;
@@ -398,7 +398,7 @@ void sortByWidth(FILE** f) {
             Picture p1, p2;
             fread(&p1, sizeof(Picture), 1, *f);
             fread(&p2, sizeof(Picture), 1, *f);
-            if (p1.width > p2.width) swap(f, j, j+1);
+            if (p1.width > p2.width) swap(f, j, j + 1);
         }
     }
 }
@@ -412,7 +412,7 @@ void sortByName(FILE** f) {
         fread(&min, sizeof(Picture), 1, *f);
         for (int j = i + 1; j < n; j++) {
             fread(&t, sizeof(Picture), 1, *f);
-            if (strcmp(min.name, t.name) > 0) { 
+            if (strcmp(min.name, t.name) > 0) {
                 min = t;
                 minPos = j;
             }
@@ -535,34 +535,37 @@ void styleReview(FILE** f) {
     char curStyle[100] = "";
     Picture t;
     fseek(*f, 0, SEEK_SET);
-    int posB = 0, posE = 0;
-    for (int i = 0; i < n; i++) {
+    fread(&t, sizeof(Picture), 1, *f);
+    strcpy_s(curStyle, t.style);
+    int posB = 0;
+    for (int i = 1; i < n; i++) {
+        fseek(*f, i * sizeof(Picture), SEEK_SET);
         fread(&t, sizeof(Picture), 1, *f);
         if (strcmp(curStyle, t.style) != 0) {
-            posE = i - 1;
-            sortByName(f, posB, posE);
+            sortByName(f, posB, i);
             strcpy_s(curStyle, t.style);
             posB = i;
         }
     }
-    sortByName(f, posB, ftell(*f) / sizeof(Picture));
+    sortByName(f, posB, n);
     view(*f);
 }
 
 void sortByName(FILE** f, int posB, int posE) {
-    for (int i = posB; i < (posE - posB); i++) {
+    for (int i = posB; i < posE - 1; i++) {
         Picture t, min;
         int minPos = i;
         fseek(*f, i * sizeof(Picture), SEEK_SET);
         fread(&min, sizeof(Picture), 1, *f);
-        for (int j = i + 1; j < (posE - posB); j++) {
+        for (int j = i + 1; j < posE; j++) {
+            fseek(*f, j * sizeof(Picture), SEEK_SET);
             fread(&t, sizeof(Picture), 1, *f);
             if (strcmp(min.name, t.name) > 0) {
                 min = t;
                 minPos = j;
             }
         }
-        swap(f, posB + i, posB + minPos);
+        swap(f, i, minPos);
     }
 }
 
