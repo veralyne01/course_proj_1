@@ -5,3 +5,7 @@ Release/
 *.user
 *.bin
 *.exe
+buffer
+*.txt
+test*
+file1
