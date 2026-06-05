@@ -21,7 +21,6 @@ void deletePic(FILE** f);
 void swap(FILE** f, int pos1, int pos2);
 void sortByWidth(FILE** f);
 void sortByName(FILE** f);
-void sortByName(FILE** f, int posB, int posE);
 void sortByYear(FILE** f);
 void searchByArtist(FILE* f);
 void searchByYear(FILE** f);
@@ -30,6 +29,7 @@ void styleReview(FILE** f);
 void findThreeBiggest(FILE* f);
 void saveToTxt(FILE* rep, Picture p);
 int countPos(FILE* f);
+int readInt();
 
 int main() {
     char filename[100];
@@ -38,7 +38,6 @@ int main() {
         "Gallery paintings accounting\n"
         "------------------------------\n");
     while (true) {
-        int input;
         printf("\nChoose the option:\n"
             " 1. New file\n"
             " 2. Open\n"
@@ -52,7 +51,7 @@ int main() {
             "10. Find 3 biggest paintings\n"
             "11. Exit\n"
             "> ");
-        scanf_s("%d", &input);
+        int input = readInt();
 
         switch (input) {
         case 1: {
@@ -113,9 +112,8 @@ int main() {
         }
         case 7: {
             if (f) {
-                int ch;
                 printf("\nChoose sort type:\n1. Bubble sort by width \n2. Choice sort by name \n3. Insertion sort by year\n> ");
-                scanf_s("%d", &ch);
+                int ch = readInt();
                 switch (ch) {
                 case 1: {
                     sortByWidth(&f);
@@ -140,9 +138,8 @@ int main() {
         }
         case 8: {
             if (f) {
-                int ch;
                 printf("\nChoose search type:\n1. Linear search by artist \n2. Binary search by year\n> ");
-                scanf_s("%d", &ch);
+                int ch = readInt();
                 switch (ch) {
                 case 1: {
                     searchByArtist(f);
@@ -163,28 +160,7 @@ int main() {
         }
 
         case 9: {
-            if (f) {
-                styleReview(&f);
-                char ch;
-                printf("\nSave result to txt (y/n)?\n> ");
-                scanf_s(" %c", &ch, 1u);
-                if (ch == 'y') {
-                    FILE* rep;
-                    errno_t err = fopen_s(&rep, "report.txt", "w");
-                    if (err == 0) {
-                        int n = countPos(f);
-                        fseek(f, 0, SEEK_SET);
-                        for (int i = 0; i < n; i++) {
-                            Picture p;
-                            fread(&p, sizeof(Picture), 1, f);
-                            saveToTxt(rep, p);
-                        }
-                        fclose(rep);
-                    }
-                    else printf("\nError: could not create .txt file!\n");
-                }
-                else if (ch == 'n') break;
-            }
+            if (f) styleReview(&f);
             else printf("Error: no opened file!");
             break;
         }
@@ -207,7 +183,7 @@ int main() {
 }
 
 void view(FILE* f) {
-    fseek(f, 0, SEEK_SET);
+    rewind(f);
     Picture temp;
     while (fread(&temp, sizeof(Picture), 1, f) == 1) viewPic(temp);
 }
@@ -231,7 +207,7 @@ void addPicture(FILE** f) {
         printf("Year: ");
         if (!scanf_s("%d", &pd.year))
         {
-            printf("\nError!\n");
+            printf("\nError: invalid year!\n");
             int c;
             while ((c = getchar()) != '\n' && c != EOF);
         }
@@ -242,7 +218,7 @@ void addPicture(FILE** f) {
         printf("Width (m): ");
         if (!scanf_s("%f", &pd.width))
         {
-            printf("\nError!\n");
+            printf("\nError: invalid width!\n");
             int c;
             while ((c = getchar()) != '\n' && c != EOF);
         }
@@ -253,7 +229,7 @@ void addPicture(FILE** f) {
         printf("Height (m): ");
         if (!scanf_s("%f", &pd.height))
         {
-            printf("\nError!\n");
+            printf("\nError: invalid height!\n");
             int c;
             while ((c = getchar()) != '\n' && c != EOF);
         }
@@ -267,8 +243,8 @@ void addPicture(FILE** f) {
 }
 
 void editPicture(FILE** f) {
-    int input, pos = searchByName(*f);
-    if (pos == -1) printf("\nError!\n");
+    int pos = searchByName(*f);
+    if (pos == -1) printf("\nError: no matching results!\n");
     else {
         Picture p;
         bool valid = false;
@@ -280,7 +256,7 @@ void editPicture(FILE** f) {
             " 5. Height\n"
             " 6. Style\n"
             "> ");
-        scanf_s("%d", &input);
+        int input = readInt();
         fseek(*f, pos * sizeof(Picture), SEEK_SET);
         fread(&p, sizeof(Picture), 1, *f);
         switch (input) {
@@ -299,7 +275,7 @@ void editPicture(FILE** f) {
                 printf("Enter new year: ");
                 if (!scanf_s("%d", &p.year))
                 {
-                    printf("\nError!\n");
+                    printf("\nError: invalid year!\n");
                     int c;
                     while ((c = getchar()) != '\n' && c != EOF);
                 }
@@ -312,7 +288,7 @@ void editPicture(FILE** f) {
                 printf("Enter new width (m): ");
                 if (!scanf_s("%f", &p.width))
                 {
-                    printf("\nError!\n");
+                    printf("\nError: invalid width!\n");
                     int c;
                     while ((c = getchar()) != '\n' && c != EOF);
                 }
@@ -325,7 +301,7 @@ void editPicture(FILE** f) {
                 printf("Enter new height (m): ");
                 if (!scanf_s("%f", &p.height))
                 {
-                    printf("\nError!\n");
+                    printf("\nError: invalid height!\n");
                     int c;
                     while ((c = getchar()) != '\n' && c != EOF);
                 }
@@ -338,7 +314,7 @@ void editPicture(FILE** f) {
             break;
         }
         default: {
-            printf("\nError!\n");
+            printf("\nError: invalid input!\n");
             break;
         }
         }
@@ -365,7 +341,7 @@ int searchByName(FILE* f) {
 void deletePic(FILE** f) {
     int pos = searchByName(*f);
     int n = countPos(*f);
-    if (pos == -1) printf("\nError!\n");
+    if (pos == -1) printf("\nError: no matching results!\n");
     else {
         while (pos < n - 1)
         {
@@ -427,15 +403,17 @@ void sortByYear(FILE** f) {
         Picture t, cur;
         fseek(*f, i * sizeof(Picture), SEEK_SET);
         fread(&cur, sizeof(Picture), 1, *f);
-        int j = i;
-        bool found = false;
-        while (!found && j > 0) {
-            j--;
+        int j = i - 1;
+        while (j >= 0) {
             fseek(*f, j * sizeof(Picture), SEEK_SET);
             fread(&t, sizeof(Picture), 1, *f);
-            if (t.year < cur.year) found = true;
-            else swap(f, j, j + 1);
+            if (t.year <= cur.year) break;
+            fseek(*f, (j + 1) * sizeof(Picture), SEEK_SET);
+            fwrite(&t, sizeof(Picture), 1, *f);
+            j--;
         }
+        fseek(*f, (j + 1) * sizeof(Picture), SEEK_SET);
+        fwrite(&cur, sizeof(Picture), 1, *f);
     }
 }
 
@@ -501,8 +479,7 @@ void searchByYear(FILE** f) {
 int binarySearch(FILE* f, int year) {
     bool found = false;
     Picture t;
-    fseek(f, 0, SEEK_END);
-    int n = ftell(f) / sizeof(Picture), start = 0, end = n, pos;
+    int n = countPos(f), start = 0, end = n, pos;
     while (!found && start <= end) {
         pos = start + (end - start) / 2;
         fseek(f, pos * sizeof(Picture), SEEK_SET);
@@ -517,70 +494,110 @@ int binarySearch(FILE* f, int year) {
 
 void styleReview(FILE** f) {
     int n = countPos(*f);
-    for (int i = 0; i < n; i++) {
-        Picture t, min;
-        int minPos = i;
-        fseek(*f, i * sizeof(Picture), SEEK_SET);
-        fread(&min, sizeof(Picture), 1, *f);
-        for (int j = i + 1; j < n; j++) {
-            fread(&t, sizeof(Picture), 1, *f);
-            if (strcmp(min.style, t.style) > 0) {
-                min = t;
-                minPos = j;
+    if (n == 0) printf("\nFile is empty!\n");
+    else {
+        int l = 1;
+        while (l < n) {
+            FILE* temp;
+            fopen_s(&temp, "buf.bin", "wb+");
+            rewind(*f);
+            rewind(temp);
+            int b1 = 0;
+            while (b1 < n)
+            {
+                int b2 = b1 + l;
+                int pos1 = 0, pos2 = 0;
+                int len1 = (b2 <= n) ? l : (n - b1);
+                int len2 = (b2 + l <= n) ? l : (n - b2);
+                if (len2 < 0) len2 = 0;
+                Picture p1, p2;
+                fseek(*f, (pos1 + b1) * sizeof(Picture), SEEK_SET);
+                fread(&p1, sizeof(Picture), 1, *f);
+                fseek(*f, (pos2 + b2) * sizeof(Picture), SEEK_SET);
+                fread(&p2, sizeof(Picture), 1, *f);
+                while (pos1 < len1 && pos2 < len2) {
+                    if (strcmp(p1.style, p2.style) < 0 || (strcmp(p1.style, p2.style) == 0 && strcmp(p1.name, p2.name) < 0)) {
+                        fwrite(&p1, sizeof(Picture), 1, temp);
+                        pos1++;
+                        fseek(*f, (pos1 + b1) * sizeof(Picture), SEEK_SET);
+                        fread(&p1, sizeof(Picture), 1, *f);
+                    }
+                    else {
+                        fwrite(&p2, sizeof(Picture), 1, temp);
+                        pos2++;
+                        fseek(*f, (pos2 + b2) * sizeof(Picture), SEEK_SET);
+                        fread(&p2, sizeof(Picture), 1, *f);
+                    }
+                }
+                while (pos1 < len1) {
+                    Picture p1;
+                    fseek(*f, (pos1 + b1) * sizeof(Picture), SEEK_SET);
+                    fread(&p1, sizeof(Picture), 1, *f);
+                    fwrite(&p1, sizeof(Picture), 1, temp);
+                    pos1++;
+                }
+                while (pos2 < len2) {
+                    Picture p2;
+                    fseek(*f, (pos2 + b2) * sizeof(Picture), SEEK_SET);
+                    fread(&p2, sizeof(Picture), 1, *f);
+                    fwrite(&p2, sizeof(Picture), 1, temp);
+                    pos2++;
+                }
+                b1 += 2 * l;
             }
-        }
-        swap(f, i, minPos);
-    }
-
-    char curStyle[100] = "";
-    Picture t;
-    fseek(*f, 0, SEEK_SET);
-    fread(&t, sizeof(Picture), 1, *f);
-    strcpy_s(curStyle, t.style);
-    int posB = 0;
-    for (int i = 1; i < n; i++) {
-        fseek(*f, i * sizeof(Picture), SEEK_SET);
-        fread(&t, sizeof(Picture), 1, *f);
-        if (strcmp(curStyle, t.style) != 0) {
-            sortByName(f, posB, i);
-            strcpy_s(curStyle, t.style);
-            posB = i;
-        }
-    }
-    sortByName(f, posB, n);
-    view(*f);
-}
-
-void sortByName(FILE** f, int posB, int posE) {
-    for (int i = posB; i < posE - 1; i++) {
-        Picture t, min;
-        int minPos = i;
-        fseek(*f, i * sizeof(Picture), SEEK_SET);
-        fread(&min, sizeof(Picture), 1, *f);
-        for (int j = i + 1; j < posE; j++) {
-            fseek(*f, j * sizeof(Picture), SEEK_SET);
-            fread(&t, sizeof(Picture), 1, *f);
-            if (strcmp(min.name, t.name) > 0) {
-                min = t;
-                minPos = j;
+            rewind(*f);
+            rewind(temp);
+            for (int i = 0; i < n; i++) {
+                Picture p;
+                fread(&p, sizeof(Picture), 1, temp);
+                fwrite(&p, sizeof(Picture), 1, *f);
             }
+            fclose(temp);
+            remove("buf.bin");
+            l *= 2;
         }
-        swap(f, i, minPos);
+        rewind(*f);
+        char curStyle[100] = "";
+        Picture p;
+        while (fread(&p, sizeof(Picture), 1, *f)) {
+            if (strcmp(curStyle, p.style) != 0) {
+                strcpy_s(curStyle, p.style);
+                printf("\n%s\n--------------------", curStyle);
+            }
+            viewPic(p);
+        }
+        char ch;
+        printf("\nSave result to txt (y/n)?\n> ");
+        scanf_s(" %c", &ch, 1u);
+        if (ch == 'y') {
+            FILE* rep;
+            errno_t err = fopen_s(&rep, "report.txt", "w");
+            if (err == 0) {
+                rewind(*f);
+                Picture p;
+                while (fread(&p, sizeof(Picture), 1, *f)) {
+                    if (strcmp(curStyle, p.style) != 0) {
+                        strcpy_s(curStyle, p.style);
+                        fprintf(rep, "\n%s\n--------------------", curStyle);
+                    }
+                    saveToTxt(rep, p);
+                }
+                fclose(rep);
+            }
+            else printf("\nError: could not open .txt file!\n");
+        }
+        else if (ch == 'n') printf("\nCancelled!\n");
+        else printf("\nError: invalid input\n");
     }
 }
 
 void findThreeBiggest(FILE* f) {
     int n = countPos(f);
-    Picture pic1, pic2, pic3;
-    if (n >= 3) {
+    Picture pic1 = { 0 }, pic2 = { 0 }, pic3 = { 0 };
+    double s1 = 0, s2 = 0, s3 = 0;
+    if (n == 0) printf("\nFile is empty!\n");
+    else {
         Picture t;
-        fread(&pic1, sizeof(Picture), 1, f);
-        fread(&pic2, sizeof(Picture), 1, f);
-        fread(&pic3, sizeof(Picture), 1, f);
-        double s1 = pic1.height * pic1.width;
-        double s2 = pic2.height * pic2.width;
-        double s3 = pic3.height * pic3.width;
-        fseek(f, 0, SEEK_SET);
         for (int i = 0; i < n; i++) {
             fread(&t, sizeof(Picture), 1, f);
             double s = t.width * t.height;
@@ -607,59 +624,40 @@ void findThreeBiggest(FILE* f) {
             "\n1st place: ");
         printf("\n%-10s %.2f", "Area:", s1);
         viewPic(pic1);
-        printf("\n2nd place: ");
-        printf("\n%-10s %.2f", "Area:", s2);
-        viewPic(pic2);
-        printf("\n3rd place: ");
-        printf("\n%-10s %.2f", "Area:", s3);
-        viewPic(pic3);
-    }
-    else if (n == 2) {
-        fread(&pic1, sizeof(Picture), 1, f);
-        fread(&pic2, sizeof(Picture), 1, f);
-        double s1 = pic1.width * pic1.height;
-        double s2 = pic2.width * pic2.height;
-        if (s1 < s2) {
-            Picture buf;
-            int b;
-            buf = pic2;
-            b = s2;
-            pic2 = pic1;
-            s2 = s1;
-            pic1 = buf;
-            s1 = b;
+        if (s2 != 0)
+        {
+            printf("\n2nd place: ");
+            printf("\n%-10s %.2f", "Area:", s2);
+            viewPic(pic2);
         }
-        printf("\n1st place: ");
-        printf("\n%-10s %.2f", "Area:", s1);
-        viewPic(pic1);
-        printf("\n2nd place: ");
-        printf("\n%-10s %.2f", "Area:", s2);
-        viewPic(pic2);
-    }
-    else {
-        fread(&pic1, sizeof(Picture), 1, f);
-        printf("\n1st place: ");
-        printf("\n%-10s %.2f", "Area:", pic1.width * pic1.height);
-        viewPic(pic1);
-    }
-    char ch;
-    printf("\nSave result to txt (y/n)?\n> ");
-    scanf_s(" %c", &ch, 1u);
-    if (ch == 'y') {
-        FILE* rep;
-        errno_t err = fopen_s(&rep, "report.txt", "w");
-        if (err == 0) {
-            saveToTxt(rep, pic1);
-            if (n > 1) saveToTxt(rep, pic2);
-            if (n > 2) saveToTxt(rep, pic3);
-            fclose(rep);
+        if (s3 != 0)
+        {
+            printf("\n3rd place: ");
+            printf("\n%-10s %.2f", "Area:", s3);
+            viewPic(pic3);
         }
-        else printf("\nError!\n");
+        char ch;
+        printf("\nSave result to txt (y/n)?\n> ");
+        scanf_s(" %c", &ch, 1u);
+        if (ch == 'y') {
+            FILE* rep;
+            errno_t err = fopen_s(&rep, "report.txt", "w");
+            if (err == 0) {
+                saveToTxt(rep, pic1);
+                if (n > 1) saveToTxt(rep, pic2);
+                if (n > 2) saveToTxt(rep, pic3);
+                fclose(rep);
+            }
+            else printf("\nError: could not create .txt file!\n");
+        }
+        else if (ch == 'n') printf("\nCancelled!\n");
+        else printf("Error: invalid input");
     }
 }
 
 void saveToTxt(FILE* rep, Picture p) {
     fprintf(rep, "\n%-10s %s", "Name:", p.name);
+    fprintf(rep, "\n%-10s %s", "Artist:", p.artist);
     fprintf(rep, "\n%-10s %d", "Year:", p.year);
     fprintf(rep, "\n%-10s %.2f", "Width:", p.width);
     fprintf(rep, "\n%-10s %.2f", "Height:", p.height);
@@ -670,6 +668,16 @@ void saveToTxt(FILE* rep, Picture p) {
 int countPos(FILE* f) {
     fseek(f, 0, SEEK_END);
     int n = ftell(f) / sizeof(Picture);
-    fseek(f, 0, SEEK_SET);
+    rewind(f);
     return n;
+}
+
+int readInt() {
+    int a;
+    while (scanf_s("%d", &a) != 1) {
+        printf("Error: invalid input!\n");
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF);
+    }
+    return a;
 }
